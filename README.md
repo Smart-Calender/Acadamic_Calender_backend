@@ -36,7 +36,7 @@ The project follows a **client–server architecture**:
 
 ### Backend
 - Java 17
-- Spring Boot (3.x)
+- Spring Boot (4.0.1)
 - Maven (Wrapper included)
 
 ### Database & Services

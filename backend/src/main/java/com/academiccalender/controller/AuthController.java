@@ -6,6 +6,7 @@ import com.academiccalender.model.Student;
 import com.academiccalender.model.Staff;
 import com.academiccalender.repository.StudentRepository;
 import com.academiccalender.repository.StaffRepository;
+import com.academiccalender.service.UserLogsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +30,9 @@ public class AuthController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    UserLogsService  userLogsService;
+
 
 
     @PostMapping("/register")
@@ -42,10 +46,13 @@ public class AuthController {
             // Student registration
            try {
                Student student = new Student();
+               Student student1;
                student.setName(user.getUsername());
                student.setStudentEmail(email);
                student.setPassword(encodedPassword);
                studentRepository.save(student);
+
+
                return ResponseEntity.ok(Map.of(
                        "message", "Student registered successfully!",
                        "email", email
@@ -63,12 +70,18 @@ public class AuthController {
             // Staff registration
             try {
                 Staff staff = new Staff();
+                Staff staff1;
                 staff.setName(user.getUsername());
                 staff.setEmail(email);
                 staff.setPassword(encodedPassword);
                 staffRepository.save(staff);
+                if(staffRepository.findByEmail(email).isPresent()){
+                    staff1=staffRepository.findByEmail(email).get();
+                    long id= staff1.getId();
+                    userLogsService.addUserLogs(id,"Registration","User Registered Successfully");
+                };
                 return ResponseEntity.ok(Map.of(
-                        "message", "Student registered successfully!"
+                        "message", "Staff registered successfully!"
                 ));
             } catch (Exception e) {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
@@ -81,67 +94,94 @@ public class AuthController {
     }
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody User user) {
+
         if (user.getEmail() == null || user.getPassword() == null) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Email or password is not set in the JSON request"));
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Email or password is missing"));
         }
 
         String email = user.getEmail();
         String password = user.getPassword();
-        if (email == null || password == null) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Email or password is null"));
+
+        try {
+
+            // ======================
+            // STUDENT LOGIN
+            // ======================
+            Optional<Student> studentOptional = studentRepository.findBystudentEmail(email);
+
+            if (studentOptional.isPresent()) {
+
+                Student student = studentOptional.get();
+
+                if (passwordEncoder.matches(password, student.getPassword())) {
+
+                    String token = JwtUtil.generateToken(student.getStudentEmail());
+
+                    userLogsService.addUserLogs(
+                            student.getId(),
+                            "Login",
+                            "Student Logged Successfully"
+                    );
+
+                    return ResponseEntity.ok(Map.of(
+                            "token", token,
+                            "message", "Login successful!",
+                            "role", "student",
+                            "email", student.getStudentEmail(),
+                            "semester", student.getSemester(),
+                            "name", student.getName(),
+                            "id", student.getId()
+                    ));
+                }
+            }
+
+            // ======================
+            // STAFF LOGIN
+            // ======================
+            Optional<Staff> staffOptional = staffRepository.findByEmail(email);
+
+            if (staffOptional.isPresent()) {
+
+                Staff staff = staffOptional.get();
+
+                if (passwordEncoder.matches(password, staff.getPassword())) {
+
+                    String token = JwtUtil.generateToken(staff.getEmail());
+
+                    userLogsService.addUserLogs(
+                            staff.getId(),
+                            "Login",
+                            "Staff Logged Successfully"
+                    );
+
+                    return ResponseEntity.ok(Map.of(
+                            "token", token,
+                            "message", "Login successful!",
+                            "role", staff.getRole() != null ? staff.getRole() : "Not Assigned",
+                            "email", staff.getEmail(),
+                            "name", staff.getName(),
+                            "id", staff.getId()
+                    ));
+                }
+            }
+
+            // ======================
+            // IF NOT FOUND
+            // ======================
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Invalid email or password"));
+
+        } catch (Exception e) {
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "message", "Login Failed",
+                            "error", e.getMessage()
+                    ));
         }
-        String encodedPassword = passwordEncoder.encode(password);
-
-        if (isStudentEmail(email)) {
-            Student student = new Student();
-            Student student1;
-            student.setName(user.getUsername());
-            student.setStudentEmail(email);
-            student.setPassword(encodedPassword);
-
-            try {
-               if (studentRepository.findBystudentEmail(email).isPresent()) {
-
-                   student1 = studentRepository.findBystudentEmail(email).get();
-                   if(passwordEncoder.matches(user.getPassword(), student1.getPassword())) {
-
-                       String token = JwtUtil.generateToken(student.getStudentEmail());
-                       Map<String, Object> response = new HashMap<>();
-                       response.put("token", token);
-                       response.put("message", "Login successful!");
-                       response.put("email",student1.getStudentEmail());
-                       response.put("role","student");
-                       response.put("semester",student1.getSemester());
-                       response.put("name",student1.getName());
-                       response.put("id",student1.getId());
-                       System.out.println(response);
-                       return ResponseEntity.ok(response);
-                   }
-
-               };
-
-
-
-
-        } catch (Exception e){
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                    "message","Failed",
-                    "error",e.getMessage()
-            ));
-        }
-
-
-
-        }
-
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message","Unauthorized access!"));
-
-
-
     }
-
-
-
 
 
     private boolean isStudentEmail(String email) {

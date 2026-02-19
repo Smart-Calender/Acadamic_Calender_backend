@@ -10,5 +10,8 @@ import java.util.Optional;
 public interface StudentRepository extends JpaRepository<Student, Long> {
 
     // Find a student by email (used for login)
-    Optional<Student> findBystudentEmail(String email);
+    Optional<Student> findByStudentEmail(String email);  // camelCase matches field studentEmail
+
+    // Find a student by ID (use the built-in method instead of custom, but you can keep this)
+    Optional<Student> findById(Long id);  // lowercase 'id' matches entity field
 }

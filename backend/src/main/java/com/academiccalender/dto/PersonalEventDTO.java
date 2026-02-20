@@ -1,9 +1,6 @@
 package com.academiccalender.dto;
 
-import com.academiccalender.model.Student;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -12,7 +9,7 @@ import java.time.LocalTime;
 
 @Getter
 @Setter
-public class StudentPersonalEventDTO {
+public class PersonalEventDTO {
 
     private Long StudentID;
     private String event;

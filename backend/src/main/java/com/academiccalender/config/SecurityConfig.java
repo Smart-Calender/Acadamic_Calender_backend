@@ -32,7 +32,7 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
 
-                /*.authorizeHttpRequests(auth -> auth
+               /* .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()  // login + register
                         .anyRequest().authenticated()
                 )*/

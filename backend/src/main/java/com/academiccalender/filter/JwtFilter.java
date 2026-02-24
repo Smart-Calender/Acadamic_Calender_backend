@@ -44,6 +44,7 @@ public class JwtFilter extends OncePerRequestFilter {
             // 🔥 Extract values from JWT
             Long userId = jwtUtil.extractUserId(token);
             String role = jwtUtil.extractRole(token);
+
             System.out.println(jwtUtil.extractRole(token));
             System.out.println(jwtUtil.extractUserId(token));
 

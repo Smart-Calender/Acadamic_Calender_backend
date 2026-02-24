@@ -66,6 +66,8 @@ public class PersonalEventController {
             return ResponseEntity.badRequest().body("Invalid data");
         }
 
+        System.out.println("Testing reaching the 2 "+dto.getEvent());
+
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Long userId = (Long) auth.getPrincipal();
 
@@ -74,7 +76,7 @@ public class PersonalEventController {
                 .findFirst()
                 .get()
                 .getAuthority();
-        System.out.println("Testing 2 "+role);
+
 
         try {
 
@@ -91,12 +93,14 @@ public class PersonalEventController {
                 event.setDate(dto.getDate());
                 event.setTime(dto.getTime());
 
+
                 staffPersonalEventRepository.save(event);
                 return ResponseEntity.status(HttpStatus.CREATED).body(event);
             }
 
             // STUDENT SIDE
             Optional<Student> studentOpt = studentRepository.findById(userId);
+            System.out.println("Saving 55 my name "+studentOpt);
             if (studentOpt.isEmpty())
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Student not found");
 
@@ -105,6 +109,8 @@ public class PersonalEventController {
             event.setEvent(dto.getEvent());
             event.setDate(dto.getDate());
             event.setTime(dto.getTime());
+
+
 
             personalStudentEventsRepository.save(event);
             return ResponseEntity.status(HttpStatus.CREATED).body(event);

@@ -22,6 +22,9 @@ import java.util.Optional;
 public class AuthController {
 
     @Autowired
+    JwtUtil jwtUtil;
+
+    @Autowired
     private StudentRepository studentRepository;
 
     @Autowired
@@ -108,7 +111,7 @@ public class AuthController {
             // ======================
             // STUDENT LOGIN
             // ======================
-            Optional<Student> studentOptional = studentRepository.findBystudentEmail(email);
+            Optional<Student> studentOptional = studentRepository.findByStudentEmail(email);
 
             if (studentOptional.isPresent()) {
 
@@ -116,7 +119,7 @@ public class AuthController {
 
                 if (passwordEncoder.matches(password, student.getPassword())) {
 
-                    String token = JwtUtil.generateToken(student.getStudentEmail());
+                    String token = jwtUtil.generateToken(student.getId(),student.getStudentEmail(),"student");
 
                     userLogsService.addUserLogs(
                             student.getId(),
@@ -147,7 +150,7 @@ public class AuthController {
 
                 if (passwordEncoder.matches(password, staff.getPassword())) {
 
-                    String token = JwtUtil.generateToken(staff.getEmail());
+                    String token = jwtUtil.generateToken(staff.getId(),staff.getEmail(),staff.getRole());
 
                     userLogsService.addUserLogs(
                             staff.getId(),

@@ -124,6 +124,151 @@ public class LabSessionController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(saved);
     }
+
+    // ─── UPDATE ───────────────────────────────────────────────
+    @PutMapping("/update/{id}")
+    public ResponseEntity<?> updateLab(@PathVariable Long id, @RequestBody LabSessionDTO dto) {
+
+        // 1️⃣ Find existing LabSession
+        LabSession labSession = labsessionRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lab session not found"));
+
+        // 2️⃣ Validate Staff (updating user)
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Long userId = (Long) auth.getPrincipal();
+        Staff staff = staffRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Staff not found"));
+
+        // 3️⃣ Optional: Check if user is instructor or admin
+        if (!labSession.getInstructor().getId().equals(userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("You are not allowed to edit this lab session");
+        }
+
+        // 4️⃣ Validate Course
+        Course course = courseRepository.findById(dto.getCourseId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found"));
+
+        // 5️⃣ Validate Lab
+        Labs lab = labsrepository.findById(dto.getLabRoomID())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lab not found"));
+
+        // 6️⃣ Validate time
+        if (dto.getStartTime().isAfter(dto.getEndTime())) {
+            return ResponseEntity.badRequest()
+                    .body("Start time must be before end time");
+        }
+
+        // 7️⃣ Check Lab Time Conflict (exclude current session)
+        boolean conflict = labsessionRepository.existsByLabAndDateAndStartTimeLessThanEqualAndEndTimeGreaterThanEqualAndIdNot(
+                lab,
+                dto.getDate(),
+                dto.getEndTime(),
+                dto.getStartTime(),
+                id
+        );
+
+        if (conflict) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Lab is already booked for this time");
+        }
+
+        // 8️⃣ Update fields
+        labSession.setSessionType(dto.getSessionType());
+        labSession.setDate(dto.getDate());
+        labSession.setPracticalName(dto.getPracticalName());
+        labSession.setStartTime(dto.getStartTime());
+        labSession.setEndTime(dto.getEndTime());
+        labSession.setCourse(course);
+        labSession.setLab(lab);
+        labSession.setTo(lab.getStaff());
+        labSession.setDescription(dto.getDescription());
+
+        LabSession updated = labsessionRepository.save(labSession);
+
+        // 9️⃣ Add log
+        userLogsService.addUserLogs(
+                userId,
+                "Lab Update",
+                "Lab session updated for course '" + dto.getCourseId() +
+                        "', practical '" + dto.getPracticalName() +
+                        "', on date " + dto.getDate() +
+                        " from " + dto.getStartTime() + " to " + dto.getEndTime() +
+                        ". Requested to lab incharge staff ID: " + lab.getStaff().getId()
+        );
+
+        return ResponseEntity.ok(updated);
+    }
+
+    // ─── DELETE ───────────────────────────────────────────────
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<?> deleteLab(@PathVariable Long id) {
+
+        // 1️⃣ Find existing LabSession
+        LabSession labSession = labsessionRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lab session not found"));
+
+        // 2️⃣ Validate user (only instructor or admin can delete)
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Long userId = (Long) auth.getPrincipal();
+
+        if (!labSession.getInstructor().getId().equals(userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("You are not allowed to delete this lab session");
+        }
+
+        // 3️⃣ Delete session
+        labsessionRepository.delete(labSession);
+
+        // 4️⃣ Add log
+        userLogsService.addUserLogs(
+                userId,
+                "Lab Deletion",
+                "Lab session deleted for course '" + labSession.getCourse().getId() +
+                        "', practical '" + labSession.getPracticalName() +
+                        "', on date " + labSession.getDate() +
+                        " from " + labSession.getStartTime() + " to " + labSession.getEndTime() +
+                        ". Lab incharge staff ID: " + labSession.getLab().getStaff().getId()
+        );
+
+        return ResponseEntity.ok("Lab session deleted successfully");
+    }
+    // ─── FETCH LABS FOR LOGGED-IN INSTRUCTOR ─────────────────
+    @GetMapping("/my-labs")
+    public ResponseEntity<?> getMyLabs() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getPrincipal() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("User not authenticated");
+        }
+
+        Long userId;
+        try {
+            userId = (Long) auth.getPrincipal();
+        } catch (ClassCastException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Invalid authentication principal");
+        }
+
+        // 1️⃣ Check if the instructor exists
+        Staff instructor = staffRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Instructor not found"));
+
+        // 2️⃣ Fetch all lab sessions for this instructor
+        List<LabSession> labs = labsessionRepository.findByInstructorId(userId);
+
+        // 3️⃣ Handle empty case
+        if (labs.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT)
+                    .body("No lab sessions found for this instructor");
+        }
+
+        // 4️⃣ Return result
+        return ResponseEntity.ok(labs);
+    }
+
+
 }
+
 
 

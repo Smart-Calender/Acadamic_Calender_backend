@@ -32,4 +32,8 @@ public class Course {
     @JsonIgnore
     private List<Student> students;
 
+    @ManyToOne
+    @JoinColumn(name = "lab_id")
+    private Labs lab;
+
 }

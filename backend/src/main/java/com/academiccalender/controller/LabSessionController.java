@@ -9,6 +9,7 @@ import com.academiccalender.repository.CourseRepository;
 import com.academiccalender.repository.LabRepository;
 import com.academiccalender.repository.LabSessionRepository;
 import com.academiccalender.repository.StaffRepository;
+import com.academiccalender.service.LabSessionService;
 import com.academiccalender.service.UserLogsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -40,6 +41,9 @@ public class LabSessionController {
 
     @Autowired
     UserLogsService  userLogsService;
+
+    @Autowired
+    LabSessionService labSessionService;
 
 
     // ─── CREATE ───────────────────────────────────────────────
@@ -384,6 +388,8 @@ public class LabSessionController {
         // Update status
         labSession.setStatus("REJECTED");
         labsessionRepository.save(labSession);
+
+        labSessionService.addlabtoStudentsPersonalEvent(labSession);
 
         userLogsService.addUserLogs(
                 userId,

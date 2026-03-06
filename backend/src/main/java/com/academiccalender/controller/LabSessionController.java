@@ -203,7 +203,7 @@ public class LabSessionController {
     // ─── DELETE ───────────────────────────────────────────────
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<?> deleteLab(@PathVariable Long id) {
-
+         System.out.println("reaching");
         // 1️⃣ Find existing LabSession
         LabSession labSession = labsessionRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lab session not found"));
@@ -211,11 +211,6 @@ public class LabSessionController {
         // 2️⃣ Validate user (only instructor or admin can delete)
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Long userId = (Long) auth.getPrincipal();
-
-        if (!labSession.getInstructor().getId().equals(userId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("You are not allowed to delete this lab session");
-        }
 
         // 3️⃣ Delete session
         labsessionRepository.delete(labSession);
@@ -267,6 +262,13 @@ public class LabSessionController {
         return ResponseEntity.ok(labs);
     }
 
+    @GetMapping("/labs")
+    public ResponseEntity<List<LabSession>> getAllLabs() {
+
+        List<LabSession> labs = labsessionRepository.findAll();
+
+        return ResponseEntity.ok(labs);
+    }
 
 }
 

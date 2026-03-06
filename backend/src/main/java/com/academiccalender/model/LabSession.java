@@ -35,12 +35,12 @@ public class LabSession {
     private String sessionType;
 
     @JoinColumn(name="instructor_id")
-    @ManyToOne (cascade=CascadeType.ALL)
+    @ManyToOne
     private Staff instructor;
 
 
     @JoinColumn(name="TO_id")
-    @ManyToOne (cascade=CascadeType.ALL)
+    @ManyToOne
     private Staff to;
 
     private String status="Pending";

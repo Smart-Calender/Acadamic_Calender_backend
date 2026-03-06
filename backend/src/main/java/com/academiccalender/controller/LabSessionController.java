@@ -270,6 +270,135 @@ public class LabSessionController {
         return ResponseEntity.ok(labs);
     }
 
+
+    // ─── FETCH LABS FOR LOGGED-IN TECHNICAL OFFICER ─────────────────
+    @GetMapping("/to-labs")
+    public ResponseEntity<?> getToMyLabs() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getPrincipal() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("User not authenticated");
+        }
+
+        Long userId;
+        try {
+            userId = (Long) auth.getPrincipal();
+        } catch (ClassCastException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Invalid authentication principal");
+        }
+
+        // 1️⃣ Check if the instructor exists
+        Staff instructor = staffRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Instructor not found"));
+
+        // 2️⃣ Fetch all lab sessions for this instructor
+        List<LabSession> labs = labsessionRepository.findByToId(userId);
+
+        // 3️⃣ Handle empty case
+        if (labs.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT)
+                    .body("No lab sessions found for this Technical Officer");
+        }
+
+        // 4️⃣ Return result
+        return ResponseEntity.ok(labs);
+    }
+
+    @PostMapping("/reject/{id}")
+    public ResponseEntity<?> rejectLab(@PathVariable Long id) {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if (auth == null || auth.getPrincipal() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("User not authenticated");
+        }
+
+        Long userId;
+        try {
+            userId = (Long) auth.getPrincipal();
+        } catch (ClassCastException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Invalid authentication principal");
+        }
+
+        // Find lab session
+        LabSession labSession = labsessionRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Lab session not found"));
+
+        // Optional: ensure the logged-in TO owns this lab
+        if (!labSession.getTo().getId().equals(userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("You are not allowed to reject this lab session");
+        }
+
+        // Update status
+        labSession.setStatus("REJECTED");
+        labsessionRepository.save(labSession);
+
+        userLogsService.addUserLogs(
+                userId,
+                "Lab Rejection",
+                "Lab session deleted for course '" + labSession.getCourse().getId() +
+                        "', practical '" + labSession.getPracticalName() +
+                        "', on date " + labSession.getDate() +
+                        " from " + labSession.getStartTime() + " to " + labSession.getEndTime() +
+                        ". Lab incharge staff ID: " + labSession.getLab().getStaff().getId()
+        );
+
+        return ResponseEntity.ok("Lab session rejected successfully");
+    }
+
+
+    @PostMapping("approve/{id}")
+    public ResponseEntity<?> approveLab(@PathVariable Long id) {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if (auth == null || auth.getPrincipal() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("User not authenticated");
+        }
+
+        Long userId;
+        try {
+            userId = (Long) auth.getPrincipal();
+        } catch (ClassCastException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Invalid authentication principal");
+        }
+
+        // Find lab session
+        LabSession labSession = labsessionRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Lab session not found"));
+
+        // Optional: ensure the logged-in TO owns this lab
+        if (!labSession.getTo().getId().equals(userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("You are not allowed to reject this lab session");
+        }
+
+        // Update status
+        labSession.setStatus("REJECTED");
+        labsessionRepository.save(labSession);
+
+        userLogsService.addUserLogs(
+                userId,
+                "Lab Approve",
+                "Lab session Approved for course '" + labSession.getCourse().getId() +
+                        "', practical '" + labSession.getPracticalName() +
+                        "', on date " + labSession.getDate() +
+                        " from " + labSession.getStartTime() + " to " + labSession.getEndTime() +
+                        ". Lab incharge staff ID: " + labSession.getLab().getStaff().getId()
+        );
+
+        return ResponseEntity.ok("Lab session Approved successfully");
+
+    }
+
 }
 
 

@@ -20,4 +20,5 @@ public interface LabSessionRepository extends JpaRepository<LabSession,Long> {
 
     boolean existsByLabAndDateAndStartTimeLessThanEqualAndEndTimeGreaterThanEqualAndIdNot(Labs lab, LocalDate date, LocalTime endTime, LocalTime startTime, Long id);
     List<LabSession> findByInstructorId(Long instructorId);
+    List<LabSession> findByToId(Long toId);
 }

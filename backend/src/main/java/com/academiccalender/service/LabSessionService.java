@@ -21,10 +21,11 @@ public class LabSessionService {
 
     public void addlabtoStudentsPersonalEvent(LabSession labSession) {
        Course course= labSession.getCourse();
-       PersonalStudentEvents personalStudentEvents = new PersonalStudentEvents();
+
        if(course != null){
            List<Student> student=course.getStudents();
            for(Student s: student){
+               PersonalStudentEvents personalStudentEvents = new PersonalStudentEvents();
                personalStudentEvents.setStudent(s);
                personalStudentEvents.setEvent(labSession.getSessionType()+" : "+labSession.getPracticalName());
                personalStudentEvents.setDate(labSession.getDate());

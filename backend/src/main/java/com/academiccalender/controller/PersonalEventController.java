@@ -100,7 +100,7 @@ public class PersonalEventController {
 
             // STUDENT SIDE
             Optional<Student> studentOpt = studentRepository.findById(userId);
-            System.out.println("Saving 55 my name "+studentOpt);
+
             if (studentOpt.isEmpty())
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Student not found");
 

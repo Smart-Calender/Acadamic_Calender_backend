@@ -1,14 +1,8 @@
 package com.academiccalender.controller;
 
 import com.academiccalender.dto.LabSessionDTO;
-import com.academiccalender.model.Course;
-import com.academiccalender.model.LabSession;
-import com.academiccalender.model.Labs;
-import com.academiccalender.model.Staff;
-import com.academiccalender.repository.CourseRepository;
-import com.academiccalender.repository.LabRepository;
-import com.academiccalender.repository.LabSessionRepository;
-import com.academiccalender.repository.StaffRepository;
+import com.academiccalender.model.*;
+import com.academiccalender.repository.*;
 import com.academiccalender.service.LabSessionService;
 import com.academiccalender.service.UserLogsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +38,9 @@ public class LabSessionController {
 
     @Autowired
     LabSessionService labSessionService;
+
+    @Autowired
+    HODRepository hodRepository;
 
 
     // ─── CREATE ───────────────────────────────────────────────
@@ -95,10 +92,11 @@ public class LabSessionController {
                         dto.getStartTime()
                 );
 
-        if (conflict) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body("Lab is already booked for this time");
-        }
+
+
+
+
+
 
         // 7️⃣ Create LabSession
         LabSession labSession = new LabSession();
@@ -111,20 +109,27 @@ public class LabSessionController {
         labSession.setCourse(course);
         labSession.setLab(lab);
         labSession.setStatus("PENDING");
-        if(dto.getSessionType().equals("LAB")){labSession.setTo(lab.getStaff());}
+
+        if(dto.getSessionType().equals("LAB"))
+        {labSession.setTo(lab.getStaff());}
+
+        else if("LECTURES".equals(dto.getSessionType())){
+            Department department=course.getDepartment();
+            HOD hod=new HOD();
+            hod=hodRepository.findByDepartment(department);
+            labSession.setTo(hod.getStaff());
+        }
         labSession.setDescription(dto.getDescription());
         LabSession saved = labsessionRepository.save(labSession);
 
-        if(!"LAB".equals(labSession.getSessionType()) &&
-                !"LECTURES".equals(labSession.getSessionType())) {
+        if(!"LAB".equals(dto.getSessionType()) &&
+                !"LECTURES".equals(dto.getSessionType())) {
 
             labSessionService.addlabtoStudentsPersonalEvent(labSession);
             labSessionService.addlabtoTechnicalOfficerPersonalEvent(labSession);
             labSessionService.addlabtoInstructorPersonalEvent(labSession);
             labSessionService.addlabtoStaffsPersonalEvent(labSession);
         }
-
-//        if()
 
 
         userLogsService.addUserLogs(

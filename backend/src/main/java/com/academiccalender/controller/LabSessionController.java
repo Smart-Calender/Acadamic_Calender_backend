@@ -111,7 +111,7 @@ public class LabSessionController {
         labSession.setCourse(course);
         labSession.setLab(lab);
         labSession.setStatus("PENDING");
-        if(dto.getSessionType()=="LAB"){labSession.setTo(lab.getStaff());}
+        if(dto.getSessionType().equals("LAB")){labSession.setTo(lab.getStaff());}
         labSession.setDescription(dto.getDescription());
         LabSession saved = labsessionRepository.save(labSession);
         userLogsService.addUserLogs(

@@ -111,9 +111,8 @@ public class LabSessionController {
         labSession.setCourse(course);
         labSession.setLab(lab);
         labSession.setStatus("PENDING");
-        labSession.setTo(lab.getStaff());
+        if(dto.getSessionType()=="LAB"){labSession.setTo(lab.getStaff());}
         labSession.setDescription(dto.getDescription());
-
         LabSession saved = labsessionRepository.save(labSession);
         userLogsService.addUserLogs(
                 userId,
@@ -382,14 +381,17 @@ public class LabSessionController {
         // Optional: ensure the logged-in TO owns this lab
         if (!labSession.getTo().getId().equals(userId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("You are not allowed to reject this lab session");
+                    .body("You are not allowed to approve this lab session");
         }
 
         // Update status
-        labSession.setStatus("REJECTED");
+        labSession.setStatus("APPROVED");
         labsessionRepository.save(labSession);
 
         labSessionService.addlabtoStudentsPersonalEvent(labSession);
+        labSessionService.addlabtoTechnicalOfficerPersonalEvent(labSession);
+        labSessionService.addlabtoInstructorPersonalEvent(labSession);
+        labSessionService.addlabtoStaffsPersonalEvent(labSession);
 
         userLogsService.addUserLogs(
                 userId,

@@ -36,4 +36,13 @@ public class Course {
     @JoinColumn(name = "lab_id")
     private Labs lab;
 
+    @ManyToMany
+    @JsonIgnore
+    @JoinTable(
+            name = "entity_staff",
+            joinColumns = @JoinColumn(name = "entity_id"),
+            inverseJoinColumns = @JoinColumn(name = "staff_id")
+    )
+    private List<Staff> staff;
+
 }

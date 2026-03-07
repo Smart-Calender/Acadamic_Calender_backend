@@ -2,8 +2,10 @@ package com.academiccalender.controller;
 
 import com.academiccalender.dto.PersonalEventDTO;
 import com.academiccalender.model.Course;
+import com.academiccalender.model.Staff;
 import com.academiccalender.model.Student;
 import com.academiccalender.repository.CourseRepository;
+import com.academiccalender.repository.StaffRepository;
 import com.academiccalender.repository.StudentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -13,6 +15,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -24,6 +27,9 @@ public class CourseController {
 
     @Autowired
     private StudentRepository studentRepository;
+
+    @Autowired
+    private StaffRepository staffRepository;
 
     @GetMapping("/all")
     public ResponseEntity<List<Course>> findAll() {
@@ -78,6 +84,23 @@ public class CourseController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonList(e.getMessage()));
         }
+    }
+
+
+    @GetMapping("/getcoursesByLecturer")
+    public ResponseEntity<?> getCoursesByLecturer() {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Long staffId = (Long) auth.getPrincipal();
+
+        if  (staffId == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.singletonList("Staff with this id does not exist"));
+        }
+
+        List<Course> courses = courseRepository.findByStaffId(staffId);
+
+
+        return ResponseEntity.ok(courses);
     }
 
 

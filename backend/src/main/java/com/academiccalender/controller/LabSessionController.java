@@ -114,6 +114,19 @@ public class LabSessionController {
         if(dto.getSessionType().equals("LAB")){labSession.setTo(lab.getStaff());}
         labSession.setDescription(dto.getDescription());
         LabSession saved = labsessionRepository.save(labSession);
+
+        if(!"LAB".equals(labSession.getSessionType()) &&
+                !"LECTURES".equals(labSession.getSessionType())) {
+
+            labSessionService.addlabtoStudentsPersonalEvent(labSession);
+            labSessionService.addlabtoTechnicalOfficerPersonalEvent(labSession);
+            labSessionService.addlabtoInstructorPersonalEvent(labSession);
+            labSessionService.addlabtoStaffsPersonalEvent(labSession);
+        }
+
+//        if()
+
+
         userLogsService.addUserLogs(
                 userId,
                 "Lab Creation",
@@ -231,7 +244,7 @@ public class LabSessionController {
 
         return ResponseEntity.ok("Lab session deleted successfully");
     }
-    // ─── FETCH LABS FOR LOGGED-IN INSTRUCTOR ─────────────────
+    // ─── FETCH LABS FOR LOGGED-IN INSTRUCTOR  ─────────────────
     @GetMapping("/my-labs")
     public ResponseEntity<?> getMyLabs() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -332,10 +345,10 @@ public class LabSessionController {
                         HttpStatus.NOT_FOUND, "Lab session not found"));
 
         // Optional: ensure the logged-in TO owns this lab
-        if (!labSession.getTo().getId().equals(userId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("You are not allowed to reject this lab session");
-        }
+//        if (!labSession.getTo().getId().equals(userId)) {
+//            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+//                    .body("You are not allowed to reject this lab session");
+//        }
 
         // Update status
         labSession.setStatus("REJECTED");
@@ -378,21 +391,24 @@ public class LabSessionController {
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Lab session not found"));
 
-        // Optional: ensure the logged-in TO owns this lab
-        if (!labSession.getTo().getId().equals(userId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("You are not allowed to approve this lab session");
-        }
+//        // Optional: ensure the logged-in TO owns this lab
+//        if (!labSession.getTo().getId().equals(userId)) {
+//            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+//                    .body("You are not allowed to approve this lab session");
+//        }
 
         // Update status
+
+        if(labSession.getStatus().equals("REJECTED") || labSession.getStatus().equals("PENDING")){
+            labSessionService.addlabtoStudentsPersonalEvent(labSession);
+            labSessionService.addlabtoTechnicalOfficerPersonalEvent(labSession);
+            labSessionService.addlabtoInstructorPersonalEvent(labSession);
+            labSessionService.addlabtoStaffsPersonalEvent(labSession);
+        }
+
+
         labSession.setStatus("APPROVED");
         labsessionRepository.save(labSession);
-
-        labSessionService.addlabtoStudentsPersonalEvent(labSession);
-        labSessionService.addlabtoTechnicalOfficerPersonalEvent(labSession);
-        labSessionService.addlabtoInstructorPersonalEvent(labSession);
-        labSessionService.addlabtoStaffsPersonalEvent(labSession);
-
         userLogsService.addUserLogs(
                 userId,
                 "Lab Approve",

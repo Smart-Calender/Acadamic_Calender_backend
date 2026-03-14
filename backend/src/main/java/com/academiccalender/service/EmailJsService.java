@@ -45,7 +45,7 @@ public class EmailJsService {
         templateParams.put("TO_Name", toName);
         templateParams.put("Lab_Name", labName);
         templateParams.put("Request_Date", requestDate);
-        templateParams.put("Request_Time", requestTime);
+        templateParams.put("Request_time", requestTime);
 
         body.put("template_params", templateParams);
 
@@ -140,8 +140,8 @@ public class EmailJsService {
         templateParams.put("Student_Name", studentName);
         templateParams.put("Event_Name", Event_Name);
         templateParams.put("Course_Name", courseName);
-        templateParams.put("Session_Date", sessionDate);
-        templateParams.put("Session_Time", sessionTime);
+        templateParams.put("Event_Date", sessionDate);
+        templateParams.put("Event_Time", sessionTime);
 
         body.put("template_params", templateParams);
 

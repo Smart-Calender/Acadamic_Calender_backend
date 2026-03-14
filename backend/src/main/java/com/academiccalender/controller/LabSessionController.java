@@ -3,6 +3,7 @@ package com.academiccalender.controller;
 import com.academiccalender.dto.LabSessionDTO;
 import com.academiccalender.model.*;
 import com.academiccalender.repository.*;
+import com.academiccalender.service.EmailJsService;
 import com.academiccalender.service.LabSessionService;
 import com.academiccalender.service.UserLogsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +42,9 @@ public class LabSessionController {
 
     @Autowired
     HODRepository hodRepository;
+
+    @Autowired
+    EmailJsService emailJsService;
 
 
     // ─── CREATE ───────────────────────────────────────────────
@@ -131,6 +135,9 @@ public class LabSessionController {
             labSessionService.addlabtoStaffsPersonalEvent(labSession);
         }
 
+        if(labSession.getSessionType().equals("LAB")|| labSession.getSessionType().equals("LECTURES"))
+         emailJsService.sendLabRequestEmail(labSession.getTo().getEmail(),labSession.getTo().getName(),dto.getPracticalName(),
+                 labSession.getDate().toString(),labSession.getStartTime().toString());
 
         userLogsService.addUserLogs(
                 userId,
@@ -359,6 +366,9 @@ public class LabSessionController {
         labSession.setStatus("REJECTED");
         labsessionRepository.save(labSession);
 
+        emailJsService.sendLabRejectedEmail(labSession.getTo().getEmail(),labSession.getInstructor().getName(),labSession.getPracticalName(),
+                labSession.getDate().toString(),labSession.getStartTime().toString());
+
         userLogsService.addUserLogs(
                 userId,
                 "Lab Rejection",
@@ -414,6 +424,23 @@ public class LabSessionController {
 
         labSession.setStatus("APPROVED");
         labsessionRepository.save(labSession);
+
+        emailJsService.sendLabApprovedEmail(labSession.getTo().getEmail(),labSession.getInstructor().getName(),labSession.getPracticalName(),
+                labSession.getDate().toString(),labSession.getStartTime().toString());
+
+
+        // Loop through all students of the course and send the event email
+        for (Student student : labSession.getCourse().getStudents()) {
+            String toEmail = student.getStudentEmail();
+            String studentName = student.getName();
+            String eventName = labSession.getSessionType();
+            String courseName = labSession.getCourse().getCourseName();
+            String eventDate = labSession.getDate().toString(); // Or format as needed
+            String eventTime = labSession.getStartTime() + " - " + labSession.getEndTime(); // Or format as needed
+
+            emailJsService.sendLabScheduledToStudent(toEmail, studentName, eventName,courseName, eventDate, eventTime);
+        }
+
         userLogsService.addUserLogs(
                 userId,
                 "Lab Approve",

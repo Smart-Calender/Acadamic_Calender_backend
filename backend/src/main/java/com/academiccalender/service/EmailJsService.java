@@ -13,7 +13,7 @@ public class EmailJsService {
     private static final String EMAILJS_API = "https://api.emailjs.com/api/v1.0/email/send";
 
     // TODO: Replace with your EmailJS values
-    private static final String SERVICE_ID = "service_lkp2atf";
+    private static final String SERVICE_ID = "service_yeke3la";
     private static final String TEMPLATE_ID = "template_pvyh8it";
     private static final String TEMPLATE_ID1 = "template_urub6kh";
     private static final String TEMPLATE_ID_REJECTED= "template_9ce3hhm";

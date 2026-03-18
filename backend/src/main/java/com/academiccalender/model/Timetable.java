@@ -20,6 +20,8 @@ public class Timetable {
     @JsonIgnore
     private Student student;
 
+    private String Status;
+
     private String course;
     private Date start_date;
     private Date end_date;

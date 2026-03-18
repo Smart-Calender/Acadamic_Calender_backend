@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Entity
 @Getter
 @Setter
@@ -21,9 +23,10 @@ public class Attendence {
     private int attendentedLectures;
 
 
-    @JoinColumn(name="Lectures_id")
-    @OneToOne
 
-    private Timetable timetable;
+
+    @JoinColumn(name="Lectures_id")
+    @OneToMany
+    private List<Timetable> timetable;
 
 }

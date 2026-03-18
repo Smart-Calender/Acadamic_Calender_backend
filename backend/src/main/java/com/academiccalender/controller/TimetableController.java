@@ -1,4 +1,5 @@
 package com.academiccalender.controller;
+import java.util.*;
 
 import com.academiccalender.model.Attendence;
 import com.academiccalender.model.Student;
@@ -14,8 +15,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Optional;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.util.Date;
 
 @Controller("/Timetable")
 public class TimetableController {
@@ -46,13 +48,21 @@ public class TimetableController {
 
         // 🔹 Get all timetables for this student
         List<Timetable> timetableList = timetableRepository.findByStudent(student);
+
         if (timetableList.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body("Timetable not found");
         }
 
-        return ResponseEntity.ok(timetableList);
+// Keep only unique courses
+        Map<String, Timetable> uniqueCourses = new LinkedHashMap<>();
+        for (Timetable t : timetableList) {
+            uniqueCourses.putIfAbsent(t.getCourse(), t); // first occurrence only
+        }
+
+        return ResponseEntity.ok(new ArrayList<>(uniqueCourses.values()));
     }
+
     @PostMapping("/addTimetable")
     public ResponseEntity<?> addTimetable(@RequestBody Timetable timetable) {
 
@@ -70,14 +80,18 @@ public class TimetableController {
 
 
         timetable.setStudent(student);
+        timetable.setStatus("NOT_CHECKED");
 
         Timetable saved = timetableRepository.save(timetable);
+
+        saveWeeklyTimetable(timetable,student);
 
         Attendence attendence = new Attendence();
         attendence.setStudent(student);
         attendence.setAttendentedLectures(0);
         attendence.setLecturesCount(0);
         attendence.setTimetable(saved);
+
         attendenceRepository.save(attendence);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
@@ -143,6 +157,79 @@ public class TimetableController {
         timetableRepository.delete(timetable);
 
         return ResponseEntity.ok("Deleted successfully");
+    }
+
+
+    public void saveWeeklyTimetable(Timetable timetable,Student student) {
+        Calendar startCal = Calendar.getInstance();
+        startCal.setTime(timetable.getStart_date());
+
+        Calendar endCal = Calendar.getInstance();
+        endCal.setTime(timetable.getEnd_date());
+
+        // Convert day string to Calendar.DAY_OF_WEEK
+        int dayOfWeek = switch (timetable.getDay().toLowerCase()) {
+            case "sun" -> Calendar.SUNDAY;
+            case "mon" -> Calendar.MONDAY;
+            case "tue" -> Calendar.TUESDAY;
+            case "wed" -> Calendar.WEDNESDAY;
+            case "thu" -> Calendar.THURSDAY;
+            case "fri" -> Calendar.FRIDAY;
+            case "sat" -> Calendar.SATURDAY;
+            default -> throw new IllegalArgumentException("Invalid day: " + timetable.getDay());
+        };
+
+        // Move startCal to the first occurrence of the desired day
+        while (startCal.get(Calendar.DAY_OF_WEEK) != dayOfWeek) {
+            startCal.add(Calendar.DAY_OF_MONTH, 1);
+        }
+
+        // Skip the first week
+        startCal.add(Calendar.WEEK_OF_YEAR, 1);
+
+        // Loop through all weeks until end date
+        Calendar current = (Calendar) startCal.clone();
+        while (!current.after(endCal)) {
+            Timetable t = new Timetable();
+            t.setCourse(timetable.getCourse());
+            t.setStart_date(current.getTime());
+            t.setEnd_date(current.getTime()); // or keep original endDate if needed
+            t.setStart_time(timetable.getStart_time());
+            t.setEnd_time(timetable.getEnd_time());
+            t.setDay(timetable.getDay());
+            t.setStatus("NOT_CHECKED");
+            t.setStudent(student);
+
+            timetableRepository.save(t);
+
+            current.add(Calendar.WEEK_OF_YEAR, 1); // move to next week
+        }
+    }
+
+    @GetMapping("trackAttendence")
+    public ResponseEntity<?> trackAttendence() {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Long userId = (Long) auth.getPrincipal();
+
+        Optional<Student> studentOpt = studentRepository.findById(userId);
+
+        if (studentOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Student not found");
+        }
+
+        Student student = studentOpt.get();
+        // Fetch timetable entries up to today and NOT_CHECKED
+        Date today = new Date();
+        List<Timetable> timetableList = timetableRepository
+                .findTimetableCustom(student, "NOT_CHECKED", today);
+        if (timetableList.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("No timetable entries found");
+        }
+        return ResponseEntity.ok(timetableList);
+
     }
 
 }

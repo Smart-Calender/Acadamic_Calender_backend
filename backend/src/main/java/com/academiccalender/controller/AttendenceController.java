@@ -1,5 +1,6 @@
 package com.academiccalender.controller;
 
+import com.academiccalender.dto.AttendanceResponse;
 import com.academiccalender.model.Attendence;
 import com.academiccalender.model.Student;
 import com.academiccalender.repository.AttendenceRepository;
@@ -12,6 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,8 +26,8 @@ public class AttendenceController {
 AttendenceRepository attendenceRepository;
 
 
-   // @GetMapping("/getAttendnce")
-   /* public ResponseEntity<?> getAttendence() {
+    @GetMapping("/getAttendnce")
+   public ResponseEntity<?> getAttendence() {
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Long userId = (Long) auth.getPrincipal();
@@ -42,18 +44,33 @@ AttendenceRepository attendenceRepository;
                     .body("Student not found");
         }
 
-        Student student = studentOpt.get();
+
 
         // 🔹 Fetch attendance list
         List<Attendence> attendenceList =
-                attendenceRepository.getAttendenceByStudent(student);
+                attendenceRepository.getAttendenceByStudent(studentOpt);
 
         if (attendenceList.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body("No attendance records found");
         }
+        List<AttendanceResponse> attendanceResponses = new ArrayList<>();
 
-        return ResponseEntity.ok(attendenceList);
-    }*/
+        for (Attendence attendence : attendenceList) {
+
+            AttendanceResponse response = new AttendanceResponse(
+                    attendence.getTimetable().getCourse(),   // course
+                    attendence.getAttendentedLectures(),     // present
+                    attendence.getLecturesCount()            // total
+            );
+
+            attendanceResponses.add(response);
+        }
+
+
+        return ResponseEntity.ok(attendanceResponses);
+    }
+
+
 
 }

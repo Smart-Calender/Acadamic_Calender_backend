@@ -13,6 +13,7 @@ public class Attendence {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @ManyToOne
+    @JsonIgnore
     private Student student;
 
     private int LecturesCount;
@@ -22,7 +23,7 @@ public class Attendence {
 
     @JoinColumn(name="Lectures_id")
     @OneToOne
-    @JsonIgnore
+
     private Timetable timetable;
 
 }

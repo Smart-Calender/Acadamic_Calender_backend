@@ -26,7 +26,7 @@ public class LabSession {
     private String PracticalName;
 
     @JoinColumn(name="lab_id")
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne
     private Labs lab;
 
     private LocalDate date;

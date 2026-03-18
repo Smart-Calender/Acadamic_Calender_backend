@@ -186,6 +186,30 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/reset-password")
+        public ResponseEntity<?> resetPassword(@RequestBody User user) {
+
+        if(user.getEmail() == null || user.getPassword() == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Email or password is missing"));
+        }
+        String encodedPassword = passwordEncoder.encode(user.getPassword());
+
+        Optional<Student> studentOptional = studentRepository.findByStudentEmail(user.getEmail());
+        if (studentOptional.isPresent()) {
+            Student student = studentOptional.get();
+            student.setPassword(encodedPassword);
+            studentRepository.save(student);
+            return ResponseEntity.ok(Map.of());
+        }
+        Optional<Staff> staffOptional = staffRepository.findByEmail(user.getEmail());
+        if (staffOptional.isPresent()) {
+            Staff staff = staffOptional.get();
+            staff.setPassword(encodedPassword);
+            staffRepository.save(staff);
+            return ResponseEntity.ok(Map.of());
+        }
+        return  ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Reseting Password Failed"));
+        }
 
     private boolean isStudentEmail(String email) {
         // Matches 20xxExxx@eng.jfn.ac.lk

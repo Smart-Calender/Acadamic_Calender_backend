@@ -13,7 +13,7 @@ public class EmailJsService {
     private static final String EMAILJS_API = "https://api.emailjs.com/api/v1.0/email/send";
 
     // TODO: Replace with your EmailJS values
-    private static final String SERVICE_ID = "service_lkp2atf";
+    private static final String SERVICE_ID = "service_yeke3la";
     private static final String TEMPLATE_ID = "template_pvyh8it";
     private static final String TEMPLATE_ID1 = "template_urub6kh";
     private static final String TEMPLATE_ID_REJECTED= "template_9ce3hhm";
@@ -45,7 +45,7 @@ public class EmailJsService {
         templateParams.put("TO_Name", toName);
         templateParams.put("Lab_Name", labName);
         templateParams.put("Request_Date", requestDate);
-        templateParams.put("Request_Time", requestTime);
+        templateParams.put("Request_time", requestTime);
 
         body.put("template_params", templateParams);
 
@@ -140,8 +140,8 @@ public class EmailJsService {
         templateParams.put("Student_Name", studentName);
         templateParams.put("Event_Name", Event_Name);
         templateParams.put("Course_Name", courseName);
-        templateParams.put("Session_Date", sessionDate);
-        templateParams.put("Session_Time", sessionTime);
+        templateParams.put("Event_Date", sessionDate);
+        templateParams.put("Event_Time", sessionTime);
 
         body.put("template_params", templateParams);
 

@@ -14,7 +14,7 @@ public class WebConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")      // allow all endpoints
-                        .allowedOrigins("http://localhost:58451") // your frontend
+                        .allowedOrigins("https://acedemiccalender.netlify.app") // your frontend
                         .allowedMethods("GET","POST","PUT","DELETE")
                         .allowCredentials(true);
             }

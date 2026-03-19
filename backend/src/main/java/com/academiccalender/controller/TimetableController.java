@@ -141,30 +141,43 @@ public class TimetableController {
         return ResponseEntity.ok(saved);
     }
 
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<?> deleteTimetable(@PathVariable Long id) {
+    @DeleteMapping("/delete/attendence/{id}")
+    public ResponseEntity<?> deleteTimetablesByAttendence(@PathVariable Long id) {
 
-        Optional<Timetable> timetableOpt = timetableRepository.findById(id);
+        // 1️⃣ Fetch the Attendence object
+        Optional<Timetable> timetable = timetableRepository.findById(id);
 
-        if (timetableOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Timetable entry not found");
-        }
 
-        Timetable timetable = timetableOpt.get();
-
-        // 🔒 Ownership check
+        // 2️⃣ Get authentication safely
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || !(auth.getPrincipal() instanceof Long)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("User not authenticated");
+        }
         Long userId = (Long) auth.getPrincipal();
 
-        if (!timetable.getStudent().getId().equals(userId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("Not allowed");
+        // 3️⃣ Fetch all timetables linked to this Attendence
+        List<Timetable> timetables = timetableRepository.findByAttendence(timetable.get().getAttendence());
+
+        if (timetables.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("No timetables found for this attendence");
         }
 
-        timetableRepository.delete(timetable);
+        // 4️⃣ Ownership check: make sure all timetables belong to this user
+        boolean allBelongToUser = timetables.stream()
+                .allMatch(t -> t.getStudent().getId().equals(userId));
 
-        return ResponseEntity.ok("Deleted successfully");
+        if (!allBelongToUser) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Not allowed to delete timetables that are not yours");
+        }
+
+        // 5️⃣ Delete all timetables
+        timetableRepository.deleteAll(timetables);
+        attendenceRepository.delete(timetable.get().getAttendence());
+
+        return ResponseEntity.ok("Deleted all timetables for this attendence");
     }
 
 

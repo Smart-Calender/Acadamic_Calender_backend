@@ -1,5 +1,6 @@
 package com.academiccalender.repository;
 
+import com.academiccalender.model.Attendence;
 import com.academiccalender.model.Student;
 import com.academiccalender.model.Timetable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -23,4 +24,5 @@ public interface TimetableRepository extends JpaRepository<Timetable,Long> {
     Timetable findTimetableById(Long id);
 
 
+    List<Timetable> findByAttendence(Attendence attendence);
 }

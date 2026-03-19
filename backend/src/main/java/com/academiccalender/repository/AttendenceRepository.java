@@ -11,5 +11,4 @@ import java.util.Optional;
 public interface AttendenceRepository extends JpaRepository<Attendence, Long> {
     List<Attendence> getAttendenceByStudent(Optional<Student> student);
 
-    Optional<Attendence> findByStudentAndTimetable(Student student, Timetable timetable);
 }

@@ -28,4 +28,9 @@ public class Timetable {
     private String start_time;
     private String end_time;
     private String day;
+
+    @JoinColumn(name="attendence_id")
+    @ManyToOne
+    @JsonIgnore
+    private Attendence attendence;
 }

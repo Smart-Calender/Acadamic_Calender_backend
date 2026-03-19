@@ -25,8 +25,7 @@ public class Attendence {
 
 
 
-    @JoinColumn(name="Lectures_id")
-    @OneToMany
-    private List<Timetable> timetable;
+
+
 
 }

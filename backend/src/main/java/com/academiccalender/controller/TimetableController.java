@@ -82,17 +82,25 @@ public class TimetableController {
         timetable.setStudent(student);
         timetable.setStatus("NOT_CHECKED");
 
-        Timetable saved = timetableRepository.save(timetable);
-
-        saveWeeklyTimetable(timetable,student);
 
         Attendence attendence = new Attendence();
         attendence.setStudent(student);
         attendence.setAttendentedLectures(0);
         attendence.setLecturesCount(0);
-        attendence.setTimetable(saved);
+        Attendence Saveattendence =attendenceRepository.save(attendence);
 
-        attendenceRepository.save(attendence);
+        timetable.setAttendence(Saveattendence);
+
+
+
+        Timetable saved = timetableRepository.save(timetable);
+
+        saveWeeklyTimetable(timetable,student,Saveattendence);
+
+
+
+
+
 
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
@@ -160,7 +168,7 @@ public class TimetableController {
     }
 
 
-    public void saveWeeklyTimetable(Timetable timetable,Student student) {
+    public void saveWeeklyTimetable(Timetable timetable,Student student,Attendence attendence) {
         Calendar startCal = Calendar.getInstance();
         startCal.setTime(timetable.getStart_date());
 
@@ -199,6 +207,7 @@ public class TimetableController {
             t.setDay(timetable.getDay());
             t.setStatus("NOT_CHECKED");
             t.setStudent(student);
+            t.setAttendence(attendence);
 
             timetableRepository.save(t);
 
@@ -212,12 +221,14 @@ public class TimetableController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Long userId = (Long) auth.getPrincipal();
 
+
         Optional<Student> studentOpt = studentRepository.findById(userId);
 
         if (studentOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body("Student not found");
         }
+
 
         Student student = studentOpt.get();
         // Fetch timetable entries up to today and NOT_CHECKED
@@ -227,6 +238,7 @@ public class TimetableController {
         if (timetableList.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body("No timetable entries found");
+
         }
         return ResponseEntity.ok(timetableList);
 

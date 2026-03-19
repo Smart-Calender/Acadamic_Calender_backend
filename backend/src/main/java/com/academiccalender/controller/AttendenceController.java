@@ -19,9 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PathVariable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Controller("/Attendence")
 public class AttendenceController {
@@ -51,24 +49,28 @@ AttendenceRepository attendenceRepository;
                     .body("Student not found");
         }
 
+        List <Timetable> timetableList = timetableRepository.findByStudent(studentOpt.get());
+        Set<Long> seenAttendanceIds = new HashSet<>();
 
+        List<Timetable> uniqueTimetables = timetableList.stream()
+                .filter(t -> {
+                    Attendence a = t.getAttendence();
+                    return a != null && seenAttendanceIds.add(a.getId());
+                })
+                .toList();
 
-        // 🔹 Fetch attendance list
-        List<Attendence> attendenceList =
-                attendenceRepository.getAttendenceByStudent(studentOpt);
-
-        if (attendenceList.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("No attendance records found");
-        }
+      if(timetableList.isEmpty()){
+          return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                  .body("Timetable not found");
+      }
         List<AttendanceResponse> attendanceResponses = new ArrayList<>();
 
-        for (Attendence attendence : attendenceList) {
+        for (Timetable timetable : uniqueTimetables) {
 
             AttendanceResponse response = new AttendanceResponse(
-                    attendence.getTimetable().getCourse(),   // course
-                    attendence.getAttendentedLectures(),     // present
-                    attendence.getLecturesCount()            // total
+                    timetable.getCourse(),   // course
+                    timetable.getAttendence().getAttendentedLectures(),     // present
+                    timetable.getAttendence().getLecturesCount()            // total
             );
 
             attendanceResponses.add(response);
@@ -76,6 +78,10 @@ AttendenceRepository attendenceRepository;
 
 
         return ResponseEntity.ok(attendanceResponses);
+
+
+
+
     }
 
 
@@ -101,16 +107,11 @@ AttendenceRepository attendenceRepository;
         Student student = studentOpt.get();
 
         Timetable timetable =timetableRepository.findTimetableById(id);
-         System.out.println(timetable.getCourse());
-        // 🔹 Get attendance by student and timetable id
-        Optional<Attendence> attendenceOpt = attendenceRepository
-                .findByStudentAndTimetable(student, timetable);
-        if (attendenceOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Attendance record not found");
-        }
 
-        Attendence attendence = attendenceOpt.get();
+
+
+       Attendence attendence = timetable.getAttendence();
+
 
         // 🔹 Update counts based on status
         switch (status.toUpperCase()) {
